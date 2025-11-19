@@ -40,7 +40,7 @@ export class CountriesService {
         const external: ExternalCountry | null = await this.externalService.getCountryByAlpha3(code);
         
         if (!external){
-            throw new error(`Country with code ${alpha3Code} not found in the external API`);
+            throw new NotFoundException(`Country with code ${alpha3Code} not found in the external API`);
         }
 
         // 3. Store it locally
