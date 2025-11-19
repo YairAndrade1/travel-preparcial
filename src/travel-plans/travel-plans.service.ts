@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { TravelPlan, TravelPlanDocument } from './schemas/travel-plan.schema';
 import { Model } from 'mongoose';
-import { CountriesService } from 'src/countries/countries.service';
+import { CountriesService } from '../countries/countries.service';
 import { CreateTravelPlanDto } from './dto/create-travel-plan.dto';
 
 @Injectable()
