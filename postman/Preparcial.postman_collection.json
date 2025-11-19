@@ -1,0 +1,116 @@
+{
+	"info": {
+		"_postman_id": "f480d567-4189-47b6-bd0d-f23d3b3e6693",
+		"name": "Preparcial",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37528445"
+	},
+	"item": [
+		{
+			"name": "Create Plan",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"countryAlpha3\": \"COL\",\r\n  \"title\": \"Viaje a Bogotá\",\r\n  \"startDate\": \"2025-12-10\",\r\n  \"endDate\": \"2025-12-20\",\r\n  \"description\": \"Visitar Monserrate y Museo del Oro\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/travel-plans",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"travel-plans"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Travel Plan By Id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/travel-plans/691d1fc3cce2c17a594e5a14",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"travel-plans",
+						"691d1fc3cce2c17a594e5a14"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Travel Plans",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/travel-plans",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"travel-plans"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Countries",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/countries",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"countries"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Country By Alpha3",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/countries/us",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"countries",
+						"us"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
