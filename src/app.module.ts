@@ -7,7 +7,7 @@ import { TravelPlansModule } from './travel-plans/travel-plans.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://root:secret@localhost:27017/travel-preparcial?authSource=admin', {}),
+    MongooseModule.forRoot('mongodb://root:secret@mongo:27017/travel-preparcial?authSource=admin', {}),
     CountriesModule,
     TravelPlansModule,
   ],
