@@ -4,6 +4,7 @@ import { TravelPlansService } from './travel-plans.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TravelPlan, TravelPlanSchema } from './schemas/travel-plan.schema';
 import { LoggingMiddleware } from '../common/middleware/logging.middleware';
+import { CountriesModule } from '../countries/countries.module';
 
 
 @Module({
@@ -11,7 +12,7 @@ import { LoggingMiddleware } from '../common/middleware/logging.middleware';
     MongooseModule.forFeature([
       { name: TravelPlan.name, schema: TravelPlanSchema }
     ]),
-    forwardRef(() => import('../countries/countries.module').then(m => m.CountriesModule))
+    forwardRef(() => CountriesModule)
   ],
   controllers: [TravelPlansController],
   providers: [TravelPlansService],
