@@ -1,179 +1,130 @@
-# Travel Preparcial API
+# Travel Preparcial API y Parcial 
 
-API REST desarrollada con NestJS y MongoDB para la gestión de países y planes de viaje. El proyecto implementa modularidad, proveedores externos, caché local, validación mediante DTOs y persistencia con Mongoose, siguiendo los lineamientos del preparcial.
+Este es un proyecto de API REST desarrollado con NestJS y MongoDB para gestionar información de países y planes de viaje. Durante el desarrollo se implementaron los requerimientos básicos del preparcial y después se extendió con funcionalidades adicionales.
 
----
+## Lo que se hizo en el Parcial 
 
-## Descripción general
+En la parte del preparacial se construyó la funcionalidad básica que incluía dos módulos principales: uno para gestionar países consultando la API de RestCountries y guardándolos en caché local con MongoDB, y otro para crear y consultar planes de viaje.
 
-La aplicación está compuesta por dos módulos principales:
+Después en el parcial agregamos tres extensiones importantes. Primero, implementamos un endpoint para eliminar países que está protegido por el segundo cambio que fue implementar un guard de autenticación simple que requiere un token "123" en el header Authorization. Este endpoint solo permite eliminar países que no tengan planes de viaje asociados.
 
-### CountriesModule
+Segundo, agregamos un middleware de logging que registra automáticamente todas las peticiones a las rutas principales de la API, capturando información como el método HTTP, la URL, el código de respuesta y el tiempo que tardó en procesarse.
 
-Encargado de gestionar información de países.
-Incluye:
+## Estructura del proyecto
 
-* Consulta a la API externa RestCountries.
-* Almacenamiento local en MongoDB como mecanismo de caché.
-* Exposición de endpoints para listar y consultar países por código alpha-3.
+La aplicación tiene dos módulos principales:
 
-La obtención de datos externos está encapsulada en un provider (`RestCountriesService`) inyectado mediante el token `COUNTRY_EXTERNAL_SERVICE`, cumpliendo la separación entre lógica de dominio y detalles de infraestructura.
+**CountriesModule:** Se encarga de gestionar la información de países. Consulta la API externa de RestCountries cuando un país no está en la base de datos local, lo guarda como caché, y expone endpoints para listar, consultar por código alpha-3 y eliminar países. La eliminación está protegida por autenticación.
 
-### TravelPlansModule
+**TravelPlansModule:** Maneja la creación y consulta de planes de viaje. Valida los datos de entrada usando DTOs, verifica que el país del plan exista antes de crearlo, y persiste todo en MongoDB.
 
-Encargado de crear y consultar planes de viaje.
-Incluye:
+Ambos módulos comparten un TravelDataRepository que centraliza las consultas a la base de datos y evita dependencias circulares entre servicios.
 
-* Validación de entrada mediante DTOs y ValidationPipe.
-* Verificación de la existencia del país correspondiente antes de crear un plan.
-* Persistencia con Mongoose.
+## Cómo ejecutar la aplicación Docker Compose 
 
----
-
-## Ejecución del proyecto
-
-### Instalación de dependencias
+Esta opción levanta tanto la API como la base de datos MongoDB automáticamente:
 
 ```bash
-npm install
+docker-compose up --build
 ```
 
-### Base de datos
+La aplicación estará disponible en `http://localhost:3000` y MongoDB en `localhost:27017`.
 
-La aplicación utiliza MongoDB. Para ejecutarla localmente se puede utilizar Docker:
+Para detener todo:
 
 ```bash
-docker run -d --name mongo \
-  -p 27017:27017 \
-  -e MONGO_INITDB_ROOT_USERNAME=root \
-  -e MONGO_INITDB_ROOT_PASSWORD=secret \
-  mongo:6.0
+docker-compose down
 ```
 
-La conexión utilizada en el proyecto es:
+### Opción alterna para desarrollo local
 
-```
-mongodb://root:secret@localhost:27017/travel-preparcial?authSource=admin
-```
-
-Esta URL puede modificarse en `src/app.module.ts`.
-
-### Iniciar la API
+Si prefieres ejecutar la aplicación localmente pero usar MongoDB en Docker:
 
 ```bash
+# Primero levanta MongoDB
+docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=secret mongo:6.0
+
+# Luego ejecuta la aplicación
 npm run start:dev
 ```
 
-La aplicación queda disponible en:
-`http://localhost:3000`
+La cadena de conexión que usa la aplicación es `mongodb://root:secret@localhost:27017/travel-preparcial?authSource=admin` y se puede modificar en `src/app.module.ts`.
 
 ---
 
-## Endpoints principales
+## Endpoints de la API
 
-### Countries
+### Países
 
-#### GET /countries
+**GET /countries** - Lista todos los países guardados en la base de datos local.
 
-Retorna todos los países almacenados en MongoDB.
+**GET /countries/:code** - Consulta un país por su código alpha-3. Si el país no está en la base de datos local, lo busca en la API de RestCountries, lo guarda y retorna la información. La respuesta incluye un campo `source` que indica si viene de "cache" o "api".
 
-#### GET /countries/:code
+**DELETE /countries/:code** - Elimina un país del caché local. Este endpoint está protegido y requiere:
+- Header `Authorization` con el token "123"
+- El país debe existir en la base de datos
+- El país no debe tener planes de viaje asociados
 
-Consulta un país por su código alpha-3.
-Comportamiento:
+### Planes de viaje
 
-1. Busca en la base de datos (caché).
-2. Si no existe, consulta RestCountries, guarda el resultado y retorna la información.
-3. Indica si la información proviene de “cache” o “api”.
+**GET /travel-plans** - Lista todos los planes de viaje.
 
----
+**POST /travel-plans** - Crea un nuevo plan de viaje. Valida que el país exista antes de crear el plan.
 
-### Travel Plans
-
-#### GET /travel-plans
-
-Retorna todos los planes de viaje registrados.
-
-#### POST /travel-plans
-
-Crea un nuevo plan de viaje validando:
-
-* Estructura del objeto mediante DTO.
-* Existencia del país (usando CountriesModule).
-
-Ejemplo de cuerpo:
-
+Ejemplo de creación:
 ```json
 {
   "countryAlpha3": "COL",
-  "title": "Vacaciones",
+  "title": "Vacaciones en Colombia",
   "startDate": "2025-01-15",
   "endDate": "2025-01-25",
-  "description": "Visitar ciudades principales"
+  "description": "Visitar Bogotá y Cartagena"
 }
 ```
 
-#### GET /travel-plans/:id
+**GET /travel-plans/:id** - Consulta un plan específico por su ID.
 
-Retorna un plan de viaje específico según su identificador.
+## Características técnicas
 
----
+### Autenticación
 
-## Provider externo: RestCountries
+Implementamos un AuthGuard simple en `src/common/guards/auth.guard.ts` que protege el endpoint de eliminación de países. El guard revisa que el header `Authorization` contenga exactamente el token "123". Si no está presente o es incorrecto, retorna un error 401.
 
-La aplicación utiliza un provider dedicado, `RestCountriesService`, para consultar la API pública RestCountries.
-Este provider:
+### Middleware de logging
 
-1. Realiza peticiones HTTP utilizando `HttpService`.
-2. Solicita únicamente los campos necesarios.
-3. Mapea la respuesta externa al formato interno definido por la interfaz `ExternalCountry`.
-4. Retorna `null` cuando el país no existe, permitiendo que CountriesService gestione el error.
+El LoggingMiddleware en `src/common/middleware/logging.middleware.ts` se aplica automáticamente a todas las rutas de `/countries` y `/travel-plans`. Registra cada petición con su método, URL, código de respuesta y tiempo de procesamiento. Los logs aparecen en la consola con formato:
 
-El servicio de países implementa una estrategia de caché tipo “cache-aside”: primero busca localmente y, si no lo encuentra, consulta la API externa y almacena el resultado.
+```
+[Nest] LOG [LoggingMiddleware] Incoming request: GET /countries
+[Nest] LOG [LoggingMiddleware] GET /countries - Status: 200 - Duration: 145ms
+```
 
----
+### Repository Pattern
+
+Para evitar dependencias circulares entre CountriesService y TravelPlansService, se creo un TravelDataRepository en `src/common/repositories/travel-data.repository.ts`. Este repository centraliza las consultas que ambos servicios necesitan, como verificar si un país existe o contar cuántos planes tiene asociados.
+
+### Provider externo
+
+La consulta a RestCountries está encapsulada en RestCountriesService, que se inyecta usando el token `COUNTRY_EXTERNAL_SERVICE`. Esto nos permite cambiar fácilmente la fuente de datos externa si fuera necesario.
 
 ## Modelos de datos
 
-### Country
+**Country**: Incluye alpha3Code, name, region, subregion, capital, population, flagUrl y timestamps automáticos.
 
-* `alpha3Code` (string, requerido)
-* `name` (string, requerido)
-* `region` (string)
-* `subregion` (string)
-* `capital` (string)
-* `population` (number)
-* `flagUrl` (string)
-* Timestamps automáticos
+**TravelPlan**: Incluye countryAlpha3, title, startDate, endDate, description opcional y timestamps automáticos.
 
-### TravelPlan
+## Pruebas básicas
 
-* `countryAlpha3` (string, requerido)
-* `title` (string, requerido)
-* `startDate` (Date, requerido)
-* `endDate` (Date, requerido)
-* `description` (string, opcional)
-* Timestamps automáticos
+Para probar la funcionalidad básica en la raiz del proyecto se encuentra una carpeta llamada Postman que tiene la coleccion .json de los endpoints, se puede importar en Postman y probar los endpoint mencionados anteriormente.
+Ejemplos de la extensión de la API se muestran ahora.
 
----
+En esta imagén se muestra la prueba del endpoint para eliminar un pais, podemos ver que en Authorization ponemos el token que es "123", sin embargo, este tiene asociado 4 travel plans y por lo tanto no deja eliminar. En este caso, como la API estaba caida y solo tenia un país en cache, no pude probar el endpoint para que borrara el país, pero como al menos me retorna "Cannot delete country arg. There are 4 travel plan(s) associated with this country." tengo garantia de que el guard si autorizo el request y el error que se obtiene es por reglas del negocio. 
+<img width="1201" height="576" alt="image" src="https://github.com/user-attachments/assets/d4535ab5-0a0c-4e08-a909-78b210d60840" />
 
-## Pruebas básicas sugeridas
+En la siguiente captura podemos ver el middleware y como registar cada peticion que hacemos en nuestra aplicación. 
+<img width="1026" height="158" alt="image" src="https://github.com/user-attachments/assets/58d49929-af6b-4871-ba25-ee10eb6dd64d" />
 
-El proyecto incluye pruebas unitarias para los dos servicios principales.
-
-### CountriesService
-
-* Verifica que un país cacheado no consulta la API externa.
-* Verifica que un país no cacheado sí consulta la API y lo almacena.
-* Maneja el caso en que el país no existe en la API externa.
-
-### TravelPlansService
-
-* Valida que el país exista antes de crear un plan.
-* Crea planes correctamente.
-* Maneja el caso en que el plan no existe al consultar por ID.
-
-Las pruebas se ejecutan con:
+Las pruebas unitarias se ejecutan con:
 
 ```bash
 npm test
