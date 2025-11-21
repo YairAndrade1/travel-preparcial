@@ -5,14 +5,20 @@ import { COUNTRY_EXTERNAL_SERVICE } from './providers/country-external.token';
 
 describe('CountriesService', () => {
   let service: CountriesService;
-  let modelMock: any;
+  let countryModelMock: any;
+  let travelPlanModelMock: any;
   let externalMock: any;
 
   beforeEach(async () => {
-    modelMock = {
+    countryModelMock = {
       findOne: jest.fn(),
       create: jest.fn(),
       find: jest.fn(),
+      exists: jest.fn(),
+      deleteOne: jest.fn(),
+    };
+    travelPlanModelMock = {
+      countDocuments: jest.fn(),
     };
     externalMock = {
       getCountryByAlpha3: jest.fn(),
@@ -21,7 +27,8 @@ describe('CountriesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CountriesService,
-        { provide: getModelToken('Country'), useValue: modelMock },
+        { provide: getModelToken('Country'), useValue: countryModelMock },
+        { provide: getModelToken('TravelPlan'), useValue: travelPlanModelMock },
         { provide: COUNTRY_EXTERNAL_SERVICE, useValue: externalMock },
       ],
     }).compile();
@@ -35,27 +42,27 @@ describe('CountriesService', () => {
 
   it('returns cached country when found locally', async () => {
     const cachedDoc = { alpha3Code: 'col', name: 'Colombia' };
-    modelMock.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(cachedDoc) });
+    countryModelMock.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(cachedDoc) });
 
     const result = await service.findByAlpha3('COL');
 
     expect(result).toEqual({ country: cachedDoc, source: 'cached' });
-    expect(modelMock.findOne).toHaveBeenCalledWith({ alpha3Code: 'col' });
+    expect(countryModelMock.findOne).toHaveBeenCalledWith({ alpha3Code: 'col' });
     expect(externalMock.getCountryByAlpha3).not.toHaveBeenCalled();
-    expect(modelMock.create).not.toHaveBeenCalled();
+    expect(countryModelMock.create).not.toHaveBeenCalled();
   });
 
   it('fetches from external API and stores when not cached', async () => {
-    modelMock.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+    countryModelMock.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
     const externalCountry = { alpha3Code: 'col', name: 'Colombia', region: 'Americas' };
     externalMock.getCountryByAlpha3.mockResolvedValue(externalCountry);
     const createdDoc = { _id: '123', alpha3Code: 'col', name: 'Colombia', region: 'Americas' };
-    modelMock.create.mockResolvedValue(createdDoc);
+    countryModelMock.create.mockResolvedValue(createdDoc);
 
     const result = await service.findByAlpha3('COL');
 
     expect(externalMock.getCountryByAlpha3).toHaveBeenCalledWith('col');
-    expect(modelMock.create).toHaveBeenCalledWith({ ...externalCountry, alpha3Code: 'col' });
+    expect(countryModelMock.create).toHaveBeenCalledWith({ ...externalCountry, alpha3Code: 'col' });
     expect(result).toEqual({ country: createdDoc, source: 'api' });
   });
 });

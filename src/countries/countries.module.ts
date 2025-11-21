@@ -7,7 +7,7 @@ import { Country, CountrySchema } from './schemas/country.schema';
 import { HttpModule } from '@nestjs/axios';
 import { TravelPlansModule } from '../travel-plans/travel-plans.module';
 import { LoggingMiddleware } from '../common/middleware/logging.middleware';
-import { TravelDataRepository } from '../common/repositories/travel-data.repository';
+
 import { TravelPlan, TravelPlanSchema } from '../travel-plans/schemas/travel-plan.schema';
 
 @Module({
@@ -22,10 +22,9 @@ import { TravelPlan, TravelPlanSchema } from '../travel-plans/schemas/travel-pla
   controllers: [CountriesController],
   providers: [
     CountriesService,
-    TravelDataRepository,
     {provide: 'COUNTRY_EXTERNAL_SERVICE', useClass: RestCountriesService}
   ],
-  exports: [CountriesService, TravelDataRepository],
+  exports: [CountriesService],
 })
 export class CountriesModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { TravelPlan, TravelPlanDocument } from './schemas/travel-plan.schema';
 import { Model } from 'mongoose';
 import { CreateTravelPlanDto } from './dto/create-travel-plan.dto';
-import { TravelDataRepository } from '../common/repositories/travel-data.repository';
+import { CountriesService } from '../countries/countries.service';
 
 @Injectable()
 export class TravelPlansService {
@@ -11,18 +11,19 @@ export class TravelPlansService {
     constructor(
         @InjectModel(TravelPlan.name)
         private readonly travelPlanModel: Model<TravelPlanDocument>,
-        private readonly travelDataRepository: TravelDataRepository,
+        @Inject(forwardRef(() => CountriesService))
+        private readonly countriesService: CountriesService,
     ) {}
 
     async create(dto: CreateTravelPlanDto): Promise<TravelPlan> {
-        const code = dto.countryAlpha3.toLowerCase();
-        const countryExists = await this.travelDataRepository.countryExists(code);
-        if (!countryExists) {
+        // Verificar que el país existe consultando CountriesService
+        const countryResult = await this.countriesService.findByAlpha3(dto.countryAlpha3);
+        if (!countryResult) {
             throw new NotFoundException(`Country with code ${dto.countryAlpha3} not found`);
         }
     
         const created = await this.travelPlanModel.create({
-            countryAlpha3: code,
+            countryAlpha3: dto.countryAlpha3.toLowerCase(),
             title: dto.title,
             startDate: dto.startDate,
             endDate: dto.endDate,
@@ -45,7 +46,7 @@ export class TravelPlansService {
     }
 
     async findByCountryAlpha3(alpha3Code: string): Promise<TravelPlan[]> {
-        return this.travelDataRepository.findTravelPlansByCountry(alpha3Code);
+        return this.travelPlanModel.find({ countryAlpha3: alpha3Code.toLowerCase() }).exec();
     }
 
 }

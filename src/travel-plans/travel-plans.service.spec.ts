@@ -47,7 +47,7 @@ describe('TravelPlansService', () => {
 
     const result = await service.create(dto);
 
-    expect(countriesServiceMock.findByAlpha3).toHaveBeenCalledWith('col');
+    expect(countriesServiceMock.findByAlpha3).toHaveBeenCalledWith('COL');
     expect(modelMock.create).toHaveBeenCalledWith({
       countryAlpha3: 'col',
       title: dto.title,
